@@ -5,7 +5,7 @@ import enrollmentRepository, { CreateEnrollmentParams } from "@/repositories/enr
 import { exclude } from "@/utils/prisma-utils";
 import { Address, Enrollment } from "@prisma/client";
 import { AddressByAPI, FinalAddress } from "@/protocols";
-import { invalidError } from "@/errors/conflict-error copy";
+import { invalidError } from "@/errors/invalidError";
 
 async function getAddressFromCEP(cep: string) {
   const result = await request.get(`https://viacep.com.br/ws/${cep}/json/`);
