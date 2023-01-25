@@ -32,6 +32,10 @@ export type FinalAddress = {
   uf: string
 }
 
+export type FinalAddressError = {
+  erro: boolean
+}
+
 export type RequestError = {
   status: number,
   data: object | null,

@@ -4,25 +4,31 @@ import addressRepository, { CreateAddressParams } from "@/repositories/address-r
 import enrollmentRepository, { CreateEnrollmentParams } from "@/repositories/enrollment-repository";
 import { exclude } from "@/utils/prisma-utils";
 import { Address, Enrollment } from "@prisma/client";
-import { AddressByAPI, FinalAddress } from "@/protocols";
+import { AddressByAPI, FinalAddress, FinalAddressError } from "@/protocols";
 import { invalidError } from "@/errors/invalidError";
 
-async function getAddressFromCEP(cep: string) {
+async function getAddressFromCEP(cep: string): Promise<FinalAddress | FinalAddressError> {
   const result = await request.get(`https://viacep.com.br/ws/${cep}/json/`);
 
   if (!result.data) {
     throw notFoundError();
   }
 
-  const data: AddressByAPI = result.data;
+  const data = result.data as AddressByAPI;
 
-  const finalAddress: FinalAddress = {
-    logradouro: data.logradouro,
-    complemento: data.complemento,
-    bairro: data.bairro,
-    cidade: data.localidade,
-    uf: data.uf
-  };
+  let finalAddress;
+
+  if (result.data.error) {
+    finalAddress = result.data as FinalAddressError;
+  } else {
+    finalAddress = {
+      logradouro: data.logradouro,
+      complemento: data.complemento,
+      bairro: data.bairro,
+      cidade: data.localidade,
+      uf: data.uf
+    } as FinalAddress;
+  }
 
   return finalAddress;
 }
@@ -56,9 +62,9 @@ async function createOrUpdateEnrollmentWithAddress(params: CreateOrUpdateEnrollm
   const address = getAddressForUpsert(params.address);
 
   //TODO - Verificar se o CEP é válido
-  const cepExists = await request.get(`https://viacep.com.br/ws/${address.cep}/json/`);
+  const cepExists = await getAddressFromCEP(address.cep) as FinalAddressError;
 
-  if (!cepExists.data) {
+  if (cepExists.erro) {
     throw invalidError();
   }
 
